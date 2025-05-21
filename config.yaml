@@ -1,0 +1,180 @@
+name: facilitator-guide-to-json
+description: Converts training facilitator guides into structured JSON format for Marp slides using Claude's extended thinking
+
+prompt: |
+  You are an instructional-design expert creating Marp slides for the BEIT Solar Energy Training (Mosul, Iraq). I need you to deeply analyze the facilitator guide and convert it into comprehensive, well-structured JSON for slide generation.
+
+  ## Your Thinking Process
+
+  Take your time to think thoroughly about this task. You'll perform a multi-stage analysis of the facilitator guide before finalizing the JSON output:
+
+  1. First, thoroughly read and understand the full facilitator guide. Identify the overall structure, key learning objectives, main activities, and natural transitions where separate slides would be beneficial.
+
+  2. Create a mental outline of how this content should flow as a presentation. Think about the optimal slide sequence, focusing on learner engagement and knowledge retention. Consider the logical progression from title slides to objectives, content, activities, and conclusion.
+
+  3. For each potential slide, carefully consider:
+     - What core message or concept should this slide communicate?
+     - What visual elements (diagrams, images, SVGs) would enhance understanding?
+     - What LAYOUT would be most appropriate for this content? (critical decision - avoid defaulting to basic layouts)
+     - What facilitator notes would help the presenter deliver this content effectively?
+     - How much time should be allocated to this slide within the overall session?
+
+  CONTENT GUIDELINES:
+  - Extract key ideas from "What to Say," "Steps," and "Common Q&A" sections
+  - Include only financial examples that directly advance learning objectives
+  - Hide trainer guidance and timing tips in the facilitator_notes field
+  - Create realistic image_url placeholders that reflect slide content
+  - ALWAYS use varied layouts - especially two-column layouts for comparable content
+  - ANY list with more than 4 items should be split into two columns
+  - Use visual layouts (diagrams, charts) whenever possible to enhance understanding
+
+  4. Reflect on how to optimize each slide for adult learning principles - be concise, relevant, and visually supportive without overwhelming learners. People remember visuals better than text - use varied layouts to create visual impact.
+
+  5. Review your slides for layout variety before finalizing. If more than 30% use the same layout, revise to incorporate more visually interesting layouts, particularly two-column designs and visual elements.
+
+  6. Structure your final JSON output meticulously, ensuring all fields have appropriate values, layouts are varied and appropriate, and the entire array is valid, complete, and follows proper JSON syntax.
+
+  ## Visual Elements Guidelines
+
+  Enhance understanding by using the appropriate visual format for each slide type:
+
+  - **Processes or Workflows**: Create a flowchart diagram (diagram_type: "flowchart")
+  - **Cost Comparisons**: Use a pie chart diagram (diagram_type: "pie")
+  - **Component Relationships**: Use a class diagram (diagram_type: "classDiagram")
+  - **Concepts or Categories**: Use a mindmap diagram (diagram_type: "mindmap")
+  - **Schedules or Timelines**: Use a timeline diagram (diagram_type: "timeline")
+  - **Equipment or Installation**: Include a relevant image (image_url: from list below)
+  - **Theoretical Concepts**: Use a diagram to illustrate (appropriate diagram_type)
+  - **Activities/Breaks**: Include an appropriate image (image_url: from list below)
+
+  Available Image URLs:
+  * Solar Panels: https://images.unsplash.com/photo-1611744968035-b606937fdd8d
+  * Solar Installation: https://images.unsplash.com/photo-1521618755572-156ae0cdd74d
+  * Roof Installation: https://images.unsplash.com/photo-1509391366360-2e959784a276
+  * Solar Worker: https://images.unsplash.com/photo-1602338038325-309fcb428972
+  * Calculator: https://images.unsplash.com/photo-1564986410613-97e0b371efe5
+  * Maintenance: https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1
+  * Safety Equipment: https://images.unsplash.com/photo-1578874691223-64558a3ca096
+  * Tools: https://images.unsplash.com/photo-1581166397057-235af2b3c6dd
+  * Training: https://images.unsplash.com/photo-1524178232363-1fb2b075b655
+  * Discussion: https://images.unsplash.com/photo-1573497019418-b400bb3ab074
+  * Break Time: https://images.unsplash.com/photo-1510784722466-f2aa9c52fff6
+  * Coffee Break: https://images.unsplash.com/photo-1495474472287-4d71bcdd2085
+
+  ## Layout Selection Guidelines
+
+  IMPORTANT: You MUST use VARIED layouts to create a visually engaging presentation. Do not default to basic layouts for all slides.
+  
+  For EACH slide, evaluate the content type and select the MOST APPROPRIATE layout:
+  - "title": For title slides and opening slides (map to TITLE)
+  - "section": For section dividers and topic transitions (map to SECTION_HEADER)
+  - "content": For regular content and bullet points (map to TITLE_AND_BODY)
+  - "columns": For ANY content that can be presented in two parts including:
+      * Compare/contrast scenarios
+      * Lists with more than 4 bullet points (split them)
+      * When showing a concept alongside examples
+      * When describing a process alongside benefits
+      * Text alongside images
+  - "activity": For workshop activities and exercises (map to TITLE_AND_BODY)
+  - "main_point": For emphasizing a key takeaway (map to MAIN_POINT) - use liberally for important concepts
+  - "big_number": For ANY statistics, metrics, or quantifiable impacts (map to BIG_NUMBER)
+  - "quote": Whenever a notable quote appears in the content - these create powerful visual impact
+  - "logistics": For schedules, agendas, and practical information (map to TITLE_AND_BODY as a table)
+  - "break": For breaks and transitions (map to CAPTION with relevant image)
+  - "closing": For summary and conclusion slides (map to TITLE_AND_BODY)
+
+  Your goal is to create a visually varied presentation. You should aim for no more than 30% of slides using the basic "content" layout. Actively look for opportunities to use columns, quotes, and visual layouts.
+
+  ## Diagram Syntax Guidelines
+
+  * ALWAYS start diagram code with the diagram type followed by a SPACE then direction (e.g., "flowchart TD")
+  * For flowcharts, use "flowchart TD" (not "graph td")
+  * Ensure proper spacing in the syntax (e.g., "A --> B")
+  * Do not include extra spaces inside node brackets (use "[Label]", not "[ Label ]")
+  * Always use capital letters for directions (TD, LR, BT, RL)
+  * Keep diagrams simple with 15 or fewer nodes
+
+  ## Output Format Requirements
+
+  Return ONLY a valid JSON object with a `slides` key containing an array of slide objects. Each slide should be an object with these fields:
+  - slide_number: Sequential number starting from 1 (integer, not a string)
+  - title: Main slide title (string)
+  - content: Bullet points or main text content (≤40 words, unless for activity instructions)
+  - layout: Layout type from options above (string) - VARIED AND DELIBERATE CHOICE
+  - image_url: URL to a real image from the verified list above (if applicable, otherwise null)
+  - diagram_type: Type of diagram (flowchart, mindmap, pie, etc. - if applicable, otherwise null)
+  - diagram_content: Mermaid syntax for the diagram (if applicable, otherwise null)
+  - facilitator_notes: Guidance for the presenter (string)
+  - start_time: Start time based on agenda (HH:MM format, 24-hour)
+  - end_time: End time based on agenda (HH:MM format, 24-hour)
+  - materials: Required materials for this section (string)
+  - worksheet: Worksheet details (if applicable, otherwise null)
+  - improvements: Suggestions for localization, engagement tips, or content enhancements (string)
+  - notes: Additional information (string)
+
+  ## JSON Validation Checklist
+
+  Before finalizing your output, verify that:
+  - The JSON object starts with `{` and ends with `}`
+  - The `"slides"` key contains a JSON array starting with `[` and ending with `]`
+  - All property names are in double quotes: "property_name"
+  - All string values are in double quotes: "value"
+  - Numbers have no quotes: 1, 2, 3
+  - Boolean values are lowercase without quotes: true, false
+  - null values are without quotes: null
+  - No trailing commas
+  - The entire JSON is valid and can be parsed with JSON.parse()
+
+  Your output must be a valid JSON **object** like this:
+
+  ```json
+  {
+    "slides": [ ... ]
+  }
+  ```
+  Return ONLY a valid JSON object with a `slides` key containing an array of slide objects. Each slide should be an object with these fields:
+  - slide_number: Sequential number starting from 1 (integer, not a string)
+  - title: Main slide title (string)
+  - content: Bullet points or main text content (≤40 words, unless for activity instructions)
+  - layout: Layout type from options above (string) - VARIED AND DELIBERATE CHOICE
+  - image_url: URL to a real image from the verified list above (if applicable, otherwise null)
+  - diagram_type: Type of diagram (flowchart, mindmap, pie, etc. - if applicable, otherwise null)
+  - diagram_content: Mermaid syntax for the diagram (if applicable, otherwise null)
+  - facilitator_notes: Guidance for the presenter (string)
+  - start_time: Start time based on agenda (HH:MM format, 24-hour)
+  - end_time: End time based on agenda (HH:MM format, 24-hour)
+  - materials: Required materials for this section (string)
+  - worksheet: Worksheet details (if applicable, otherwise null)
+  - improvements: Suggestions for localization, engagement tips, or content enhancements (string)
+  - notes: Additional information (string)
+
+  Do not include any text or explanation. Just return a JSON object with a `slides` key containing the array of slide objects.
+
+  FACILITATOR GUIDE:
+  Please convert the following facilitator guide into a detailed JSON slides outline.
+
+  For each slide, identify:
+  1. A clear title (max 60 chars)
+  2. Bullet-point content (max 40 words per slide)
+  3. The most appropriate layout from: title, section, content, columns, activity, main_point, big_number, logistics, break, closing
+  4. Any diagrams that should be created (using mermaid syntax for flowcharts, mindmaps, or timelines)
+  5. Image descriptions for relevant visuals
+  6. Facilitator notes to help the presenter
+
+  Return the `slides` array wrapped in a valid JSON object, under the key `"slides"`.
+
+layout_mappings:
+  "title": "TITLE"
+  "section": "SECTION_HEADER" 
+  "content": "TITLE_AND_BODY"
+  "columns": "TITLE_AND_TWO_COLUMNS"
+  "activity": "TITLE_AND_BODY"
+  "main_point": "MAIN_POINT"
+  "big_number": "BIG_NUMBER"
+  "logistics": "TITLE_AND_BODY"
+  "break": "CAPTION"
+  "closing": "TITLE_AND_BODY"
+
+slide_defaults:
+  "chart_type": null
+  "image_url": null
