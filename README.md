@@ -1,35 +1,65 @@
 # MakeSlides
 
-A CLI tool that uses AI to convert training facilitator guides into Google Slides presentations.
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/bilalghalib/makeslides)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
+
+**AI-powered CLI tool that converts training facilitator guides into professional Google Slides presentations.**
+
+Transform your markdown facilitator guides into engaging, professionally formatted presentations with intelligent layout selection, automatic diagram generation, and seamless image management—all powered by Claude AI.
 
 ## Features
 
-- 🤖 Uses Claude AI to process facilitator guides into structured JSON
-- 🎯 Creates professional Google Slides presentations with consistent formatting
-- 📊 Generates Mermaid diagrams for flowcharts, mindmaps, and other visualizations
-- 🖼️ Integrates images with automatic uploading and hosting
-- 📝 Preserves facilitator notes in slide speaker notes
-- 🔄 Validates and repairs diagrams automatically
-- 📋 Creates CSV overviews of presentations
-- 🎭 Supports varied slide layouts to create visual interest
+- 🤖 **AI-Powered Parsing**: Uses Claude AI to intelligently analyze facilitator guides and structure content
+- 🎯 **Smart Layout Selection**: Automatically chooses optimal slide layouts based on content semantics
+- 📊 **Automatic Diagram Generation**: Creates Mermaid diagrams (flowcharts, mindmaps, timelines, etc.) with error correction
+- 🖼️ **Seamless Image Management**: Automatically uploads and hosts images for Google Slides compatibility
+- 📝 **Rich Slide Layouts**: Supports 10+ layout types (title, section, columns, quote, big number, etc.)
+- 🔄 **Robust Error Handling**: Retry logic with exponential backoff and graceful degradation
+- 📋 **Batch Processing**: Process multiple guides in a directory simultaneously
+- 💾 **Asset Caching**: Intelligent caching to avoid regenerating identical diagrams
+- 🎭 **Visual Variety**: Encourages varied, engaging presentations with two-column layouts and visual elements
+- 🔧 **Modular Architecture**: Each component can run independently for maximum flexibility
 
-## Installation
+## Quick Start
 
-1. Clone this repository
-2. Install dependencies:
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/bilalghalib/makeslides.git
+cd makeslides
+
+# Install Python dependencies
+pip install -e .
+
+# Install Node.js dependencies
+npm install -g md2gslides @mermaid-js/mermaid-cli
+```
+
+### Setup
+
+1. **Set up Anthropic API key** (for Claude AI):
+   ```bash
+   export ANTHROPIC_API_KEY="your-key-here"
    ```
-   npm install
-   ```
-3. Set up your environment:
-   - Create a `.env` file with your Anthropic API key:
-     ```
-     ANTHROPIC_API_KEY=your-key-here
-     ```
-   - Rename the client secret JSON file to `credentials.json` for Google API access
-   - Install the Mermaid CLI:
-     ```
-     npm install -g @mermaid-js/mermaid-cli
-     ```
+
+2. **Configure Google Slides API**:
+   - Go to [Google Cloud Console](https://console.developers.google.com)
+   - Create a project and enable Google Slides API
+   - Create OAuth 2.0 credentials (Desktop Application)
+   - Download the JSON file and save as `~/.md2googleslides/client_id.json`
+
+### Basic Usage
+
+```bash
+# One-command solution (all steps)
+./magicSlide.sh guides/your_guide.md
+
+# Or step-by-step with image handling
+./magicSlide.sh guides/your_guide.md --stop-after=4
+python upload_and_fix_images.py slides_your_guide.md
+```
 
 ## Usage
 
@@ -38,261 +68,316 @@ A CLI tool that uses AI to convert training facilitator guides into Google Slide
 The easiest way to create slides is with the `magicSlide.sh` script:
 
 ```bash
+# Full workflow (guide → JSON → diagrams → markdown → slides)
 ./magicSlide.sh path/to/guide.md
-```
 
-This will:
-1. Convert your facilitator guide to JSON
-2. Generate diagrams for all slides
-3. Create a CSV overview
-4. Convert to markdown
-5. Generate Google Slides
-
-For even simpler usage with automatic image handling:
-
-```bash
-# Generate markdown (steps 1-4)
+# Stop before slides generation (useful for image processing)
 ./magicSlide.sh path/to/guide.md --stop-after=4
-
-# Upload images and create presentation
 python upload_and_fix_images.py slides_filename.md
+
+# Batch processing (process entire directory)
+./magicSlide.sh guides/ --title-prefix="Training: "
 ```
 
 ### Individual Steps
 
-If you prefer to run each step manually:
+For more control, run each step separately:
 
-#### 1. Processing Facilitator Guides
-
-Convert a facilitator guide to JSON format:
+#### 1. Convert Guide to JSON
 
 ```bash
-python guide_to_json.py path/to/guide.md
+python guide_to_json.py guides/day2.md
+# Creates: slides_day2.json
 ```
 
-This will generate a `slides_<filename>.json` file with the structured content.
-
-#### 2. Processing Diagrams
-
-Generate images from Mermaid diagrams in your JSON file:
+#### 2. Generate Diagrams
 
 ```bash
-python diagrams_to_images.py slides_<filename>.json
+python diagrams_to_images.py slides_day2.json
+# Creates diagrams in: images/
 ```
 
-This will:
-1. Find all diagram content in the JSON
-2. Render them using Mermaid CLI
-3. Save the images in the `images/` directory
-4. Update the JSON with the image paths
-
-#### 3. Converting JSON to Markdown
-
-Convert the processed JSON to markdown format:
+#### 3. Convert to Markdown
 
 ```bash
-python json_to_markdown.py slides_<filename>.json
+python json_to_markdown.py slides_day2.json
+# Creates: slides_day2.md
 ```
 
-This creates a `slides_<filename>.md` file formatted for use with Google Slides.
-
-#### 4. Building Google Slides
-
-Generate Google Slides from the markdown:
+#### 4. Upload Images & Generate Slides
 
 ```bash
-python build_with_md2gslides.py slides_<filename>.md --fix-format --use-fileio
+python upload_and_fix_images.py slides_day2.md
+# Uploads images, updates markdown, creates Google Slides
 ```
 
-### Image Handling
-
-**Important**: md2gslides **requires** images to be hosted online. Local image paths will not work, even with the `--use-fileio` option.
-
-#### Automated Solution (Recommended)
-
-The simplest approach is to use our automatic image uploader:
+### Advanced Options
 
 ```bash
-python upload_and_fix_images.py slides_your_file.md
+# Use different Claude model
+./magicSlide.sh guide.md --model=claude-3-7-sonnet-20250219
+
+# Debug mode with verbose output
+./magicSlide.sh guide.md --debug
+
+# Start from specific step (e.g., resume from step 3)
+./magicSlide.sh guide.md --start-step=3
+
+# Custom asset cache directory
+./magicSlide.sh guide.md --asset-dir=/path/to/cache
+
+# Verify installation before running
+./magicSlide.sh guide.md --verify-npm
 ```
-
-This script will:
-1. Find all images referenced in your markdown and JSON
-2. Upload them to litterbox.catbox.moe
-3. Update your markdown with the remote URLs
-4. Generate the Google Slides presentation
-
-#### Alternative Approaches
-
-You can also use our other image handling tools:
-
-##### 1. Direct Image Fixer
-
-```bash
-python direct_image_fixer.py slides_your_file.md
-```
-
-A simpler script that just handles image upload and URL replacement.
-
-##### 2. Manual Image Upload
-
-Upload individual images:
-
-```bash
-./upload_temp_image.sh images/your_file_slideX_diagramtype.png [expiry_time]
-```
-
-Where expiry_time can be 1h, 12h, 24h, or 72h (default: 24h).
-
-##### 3. Batch Upload
-
-Upload all images at once:
-
-```bash
-./upload_all_images.sh [expiry_time]
-```
-
-The script will:
-1. Upload all PNG files in the images directory to litterbox.catbox.moe
-2. Create an `image_urls.txt` file mapping local paths to remote URLs
-3. Show a summary of the uploads
-
-##### 4. Updating Markdown with Image URLs
-
-After uploading images, update your markdown:
-
-```bash
-./update_image_urls.py slides_your_file.md
-```
-
-This script will:
-1. Read the `image_urls.txt` mapping file 
-2. Replace all local image references in your markdown with remote URLs
-3. Show a summary of replaced references
-
-**Note**: litterbox.catbox.moe hosts images temporarily (they expire after the specified time). For permanent presentations, consider a more permanent hosting solution.
-
-## Workflow Options
-
-### Recommended Workflow (Easiest)
-
-1. Create a facilitator guide markdown file with structured sections for slides
-2. Process with magicSlide.sh to generate markdown:
-   ```bash
-   ./magicSlide.sh your_guide.md --stop-after=4
-   ```
-3. Use the automated image handling and slides generation:
-   ```bash
-   python upload_and_fix_images.py slides_your_guide.md
-   ```
-
-### Manual Workflow (Traditional)
-
-1. Create a facilitator guide markdown file with structured sections for slides
-2. Process the guide with `guide_to_json.py` to create JSON
-3. Generate diagrams with `diagrams_to_images.py`
-4. Convert to markdown with `json_to_markdown.py`
-5. Upload images with `upload_all_images.sh`
-6. Update markdown with URLs using `update_image_urls.py`
-7. Generate Google Slides with `build_with_md2gslides.py`
 
 ## Guide Format
 
-Facilitator guides should follow this structure:
+Facilitator guides should follow this markdown structure:
 
 ```markdown
-# Title of Presentation
+# Training Title
 
-## Slide 1: Title Slide
-- Title: Main Title
-- Subtitle: Subtitle Text
+## Slide 1: Welcome
+- Title: Welcome to Solar Energy Training
+- Subtitle: Mosul, Iraq - 2024
+- Layout: title
 
-## Slide 2: Content Slide
-- Title: Slide Title
+## Slide 2: Learning Objectives
+- Title: Today's Learning Objectives
 - Content: |
-  * Bullet point 1
-  * Bullet point 2
-  * Bullet point 3
+  * Understand solar panel components
+  * Learn installation best practices
+  * Master safety protocols
+  * Practice troubleshooting techniques
+- Layout: content
 
-## Slide 3: Diagram Slide
-- Title: Diagram Title
+## Slide 3: Installation Process
+- Title: Installation Process Flow
 - Diagram Type: flowchart
 - Diagram Content: |
   flowchart TD
-    A[Start] --> B[Process]
-    B --> C[End]
+    A[Site Assessment] --> B[Panel Mounting]
+    B --> C[Electrical Connection]
+    C --> D[Testing]
+    D --> E[Commissioning]
+- Layout: content
 
-## Slide 4: Image Slide
-- Title: Image Title
-- Image URL: https://example.com/image.png
-- Alt Text: Description of the image
+## Slide 4: Key Takeaway
+- Title: Safety First!
+- Content: Always follow proper safety protocols
+- Layout: main_point
 ```
+
+## Supported Features
+
+### Slide Layouts
+
+- **TITLE**: Title slide with subtitle
+- **SECTION_HEADER**: Section divider
+- **TITLE_AND_BODY**: Content with bullet points (default)
+- **TWO_COLUMNS**: Side-by-side content or content + image
+- **QUOTE**: Emphasized quote with attribution
+- **MAIN_POINT**: Large text for key takeaways
+- **BIG_NUMBER**: Statistics or metrics
+- **CAPTION**: Image with caption
+- **BLANK**: Full-screen background image
+
+### Diagram Types
+
+- **flowchart**: Process flows (TD, LR, RL, BT)
+- **mindmap**: Hierarchical information
+- **pie**: Proportional data
+- **timeline**: Sequential events
+- **sequenceDiagram**: Interactions between entities
+- **classDiagram**: Class relationships
+- **quadrantChart**: 2x2 categorization
+- **gantt**: Project timelines
+- **journey**: User journey maps
+- **stateDiagram-v2**: State transitions
 
 ## Configuration
 
-- **Prompts**: Stored in YAML format in the `prompts/` directory
-  - `facilitator-guide-to-json.yaml` - Controls how Claude processes guides
+### config.yaml
 
-- **Diagrams**: Configuration in `mermaid-config.json`
-  - Diagrams are generated using Mermaid CLI
-  - Supports flowcharts, mindmaps, sequence diagrams, etc.
+Controls Claude AI's behavior when parsing guides:
 
-- **Storage**: Local images stored in the `images/` directory
+```yaml
+prompt_template: "{{content}}"  # Main prompt template
+layout_mappings:
+  title: "TITLE"
+  section: "SECTION_HEADER"
+  content: "TITLE_AND_BODY"
+  columns: "TITLE_AND_TWO_COLUMNS"
+  # ... more mappings
+slide_defaults:
+  chart_type: null
+  image_url: null
+```
+
+### Environment Variables
+
+```bash
+# Required
+export ANTHROPIC_API_KEY="your-anthropic-key"
+
+# Optional
+export MAKESLIDES_ASSET_DIR="~/.makeslides/assets"
+```
 
 ## Troubleshooting
 
-### Missing Images in Slides
+### Images Don't Appear in Slides
 
-This is the most common issue. If your slides don't show images:
+**Solution**: Images must be hosted online for Google Slides.
 
-1. **Use the automated image handling**:
-   ```bash
-   python upload_and_fix_images.py slides_your_file.md
-   ```
-   This script will find, upload, and properly reference all images.
+```bash
+# Automated solution (recommended)
+python upload_and_fix_images.py slides_your_file.md
+```
 
-2. **Check image references** in your markdown file:
-   - Images must use URLs, not local paths
-   - Check that URLs are accessible in your browser
-   - Use the `update_image_urls.py` script to fix references
+**Note**: Images are uploaded to litterbox.catbox.moe and expire after 24h by default. For production presentations, consider implementing permanent hosting (S3, Cloudinary, etc.).
 
-3. **Verify image hosting**:
-   - Make sure the images were successfully uploaded to litterbox.catbox.moe
-   - Check if any images have expired (default 24h lifespan)
-   - Try re-uploading with `upload_all_images.sh`
+### Diagram Generation Fails
 
-### Other Common Issues
+- Ensure Mermaid CLI is installed: `npm install -g @mermaid-js/mermaid-cli`
+- Verify syntax with [Mermaid Live Editor](https://mermaid.live)
+- The system will auto-fix most errors using Claude AI
+- Keep diagrams simple (≤15 nodes recommended)
 
-- **JSON Parsing Errors**:
-  - Check the raw LLM response in the debug directory
-  - Increase `max_tokens` in the Claude API call
-  - Try splitting your guide into smaller sections
+### JSON Parsing Errors
 
-- **Diagram Generation Errors**:
-  - Ensure diagram syntax follows the Mermaid specification
-  - Use proper case for diagram directions (e.g., "TD" for top-down)
-  - Simplify complex diagrams (15 nodes or fewer is ideal)
+- Check that guide follows the expected format
+- Use `--force-json` flag to attempt extraction from malformed responses
+- Increase max_tokens if content is truncated
+- Process large guides in smaller sections
 
-- **Slide Layout Issues**:
-  - Use the new format-markdown.py script: `python format-markdown.py slides_your_file.md`
-  - For two-column layouts, use the {.column} marker as shown in the examples
-  - Avoid HTML elements - md2gslides only supports limited markdown
+### Google Slides Generation Fails
 
-- **Google Slides Generation**:
-  - Verify Google API credentials in ~/.md2googleslides/client_id.json
-  - Make sure md2gslides is installed: `npm install -g md2gslides`
-  - Run with the --debug flag to see more information about errors
+- Verify credentials: `~/.md2googleslides/client_id.json`
+- Check md2gslides installation: `md2gslides --version`
+- Use `--fix-format` flag for markdown validation
+- Run with `--debug` for detailed error messages
 
-## Example Files
+## Architecture
 
-The repository includes several example files:
-- `simple_template.md` - A basic template for creating presentations
-- `test_comprehensive.md` - A comprehensive test with various slide types
+```
+makeslides/
+├── makeslides/              # Core Python package
+│   ├── assets/             # Asset caching & management
+│   ├── diagrams/           # Mermaid rendering
+│   ├── guide/              # AI-powered parsing
+│   ├── markdown/           # Markdown generation
+│   └── slides/             # Google Slides creation
+├── scripts/                # Workflow automation
+│   ├── magicSlide.sh      # Main orchestrator
+│   └── upload_and_fix_images.py  # Image management
+├── config.yaml             # Prompt configuration
+└── setup.py               # Package setup
+```
 
-## Contributing
+### Key Principles
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Separation of Concerns**: Each module has a single, clear responsibility
+- **Error Resilience**: Retry logic with exponential backoff for all external services
+- **Graceful Degradation**: System continues with fallbacks when components fail
+- **Configuration-Driven**: Behavior controlled via config files, not hardcoded
+- **CLI-First**: All features accessible via command-line
+
+## Code Review Summary
+
+### What This Code Does
+
+MakeSlides is an intelligent automation tool that transforms training facilitator guides into professional Google Slides presentations through a 5-stage AI-powered pipeline:
+
+1. **Parsing**: Claude AI analyzes markdown guides and structures content into JSON
+2. **Diagram Rendering**: Mermaid diagrams are generated as PNG/SVG with auto-correction
+3. **Markdown Generation**: JSON is converted to md2gslides-compatible markdown
+4. **Image Processing**: Local images are uploaded to cloud hosting and references updated
+5. **Slides Generation**: Final Google Slides presentation is created
+
+### 5 Major Pros
+
+1. **AI-Powered Intelligence**: Claude AI provides exceptional flexibility in parsing varied input formats, intelligently selecting layouts, and automatically fixing diagram syntax errors
+2. **Robust Error Handling**: Comprehensive retry logic with exponential backoff, fallback mechanisms, and graceful degradation throughout the pipeline
+3. **Modular Architecture**: Clean separation of concerns makes the codebase maintainable, testable, and allows independent use of components
+4. **Rich Configuration**: Extensive customization via config.yaml without code changes, adaptable to different presentation styles and contexts
+5. **Comprehensive Workflow Management**: The magicSlide.sh script offers step-by-step execution, progress tracking, batch processing, and extensive CLI options
+
+### 5 Major Cons
+
+1. **External Service Dependencies**: Critical reliance on Anthropic API, litterbox.catbox.moe, Google Slides API, and md2gslides creates fragility
+2. **Limited Offline Capability**: Requires internet for multiple operations with no offline or local-first workflow option
+3. **Tight md2gslides Coupling**: Markdown generation specifically tailored to md2gslides' limited syntax, difficult to migrate to other tools
+4. **Temporary Image Hosting**: Images expire (default 24h), presentations become broken, no permanent production solution
+5. **Incomplete Testing**: No unit tests, integration tests, or comprehensive API documentation in the codebase
+
+### 5 Evolution Opportunities
+
+1. **Multi-Format Output**: Add support for PowerPoint (python-pptx), PDF, reveal.js, Marp, Beamer (LaTeX) with format-specific optimizations
+2. **Permanent Image Management**: Implement S3, Cloudinary, or self-hosted solutions with optimization, caching, and search integration
+3. **Interactive Web Editor**: Build GUI for reviewing/editing presentations with side-by-side comparison, drag-and-drop, and collaborative features
+4. **Advanced Analytics**: Add readability analysis, pacing metrics, accessibility validation, and quality recommendations
+5. **Template Marketplace**: Create library of reusable templates, content blocks, theme customization, and community sharing platform
+
+## Examples
+
+See the repository for example files:
+- `simple_template.md` - Basic template
+- `test_comprehensive.md` - Various slide types
+- `test_slide_variety.md` - Layout examples
+
+## Development
+
+### Contributing
+
+```bash
+# Format code
+black makeslides/ scripts/
+
+# Lint
+flake8 makeslides/ scripts/
+
+# Type checking (when implemented)
+mypy makeslides/
+```
+
+### Testing
+
+```bash
+# Test suite under development
+# TODO: Add pytest configuration
+```
+
+## Roadmap
+
+- [ ] Comprehensive test suite (unit & integration)
+- [ ] Full type hints with mypy validation
+- [ ] Permanent image hosting integration (S3, Cloudinary)
+- [ ] Multi-format export (PowerPoint, PDF, reveal.js)
+- [ ] Web-based presentation editor
+- [ ] Accessibility checker and quality metrics
+- [ ] Template library and marketplace
+- [ ] Multilingual support
+- [ ] Offline mode with local LLM support
 
 ## License
 
-ISC License
+ISC License - see LICENSE file for details.
+
+## Credits
+
+Built with:
+- [Anthropic Claude](https://www.anthropic.com/) - AI-powered content analysis
+- [md2gslides](https://github.com/googleworkspace/md2googleslides) - Google Slides generation
+- [Mermaid](https://mermaid.js.org/) - Diagram rendering
+
+## Support
+
+For issues, questions, or contributions:
+- Open an issue on GitHub
+- Check [CLAUDE.md](CLAUDE.md) for detailed documentation
+- Review examples in the repository
+
+---
+
+**Made with ❤️ for training facilitators everywhere**

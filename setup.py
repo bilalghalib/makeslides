@@ -7,19 +7,25 @@ long_description = (root / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="makeslides",
-    version="0.3.0",
-    description="End-to-end pipeline: prompt → diagram → markdown → Google Slides",
+    version="0.4.0",
+    description="AI-powered presentation generator - supports PPTX, reveal.js, Google Slides, and more",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Bilal",
     packages=find_packages(exclude=("tests*", "examples*")),
     python_requires=">=3.9",
     install_requires=[
+        "anthropic>=0.18.0",
+        "pyyaml>=6.0.1",
+        "requests>=2.32.0",
+        "tqdm>=4.66.0",
+        "pillow>=10.0.0",
+        "python-pptx>=0.6.21",
+        # Optional (for Google Slides export)
         "md2gslides>=3.1.0",
         "python-dotenv>=1.0.1",
         "google-auth>=2.28.0",
         "google-api-python-client>=2.122.0",
-        "requests>=2.32.0",
         "beautifulsoup4>=4.12.3",
         "python-slugify>=8.0.4"
     ],
